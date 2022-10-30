@@ -17,9 +17,16 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -56,6 +63,9 @@ public class MainActivity extends AppCompatActivity {
 
     // Member object for the bluetooth services
     private BluetoothService mBluetoothService = null;
+
+    // Map object
+    private GoogleMap mMap;
 
     // Result activity API implementation to request Bluetooth
     ActivityResultLauncher<Intent> requestBluetoothEnable = registerForActivityResult(
@@ -222,11 +232,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_SHORT).show();
             finish();
         }
-
-
-        // Maps
-
-
     }
 
 
