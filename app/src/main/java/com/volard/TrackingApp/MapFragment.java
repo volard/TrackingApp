@@ -114,6 +114,10 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
             }
         });
 
+        Bundle result = new Bundle();
+        result.putString("bundleKey", marker.getTitle());
+        getParentFragmentManager().setFragmentResult("requestKey", result);
+
         Log.i(TAG, "Marker " + marker.getTitle() + " was clicked");
 //        Intent intent = new Intent(requireActivity().getBaseContext(),
 //                TargetActivity.class);
@@ -133,6 +137,7 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        // Inflates the custom fragment layout
         return inflater.inflate(R.layout.fragment_map, container, false);
     }
 

@@ -3,6 +3,7 @@ package com.volard.TrackingApp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -21,10 +22,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentResultListener;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -42,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
     // current context
     private Context context;
+
+    // Map as the fragment
+    private final Fragment mapFragment = null;
 
     // Intent request codes
     private static final int REQUEST_ENABLE_BT = 3;
@@ -69,18 +76,18 @@ public class MainActivity extends AppCompatActivity {
 
     // Result activity API implementation to request Bluetooth
     ActivityResultLauncher<Intent> requestBluetoothEnable = registerForActivityResult(
-        new ActivityResultContracts.StartActivityForResult(),
-        result -> {
-            if (result.getResultCode() == Activity.RESULT_OK) {
-                Log.i(BluetoothService.TAG, "Bluetooth adapter was successfully enabled");
-            } else {
-                try {
-                    throw new Exception("Bluetooth adapter wasn't enabled successfully");
-                } catch (Exception e) {
-                    e.printStackTrace();
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    Log.i(BluetoothService.TAG, "Bluetooth adapter was successfully enabled");
+                } else {
+                    try {
+                        throw new Exception("Bluetooth adapter wasn't enabled successfully");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-        }
     );
 
 
@@ -149,40 +156,35 @@ public class MainActivity extends AppCompatActivity {
             Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            if(msg.what == Constants.MESSAGE_STATE_CHANGE){
+            if (msg.what == Constants.MESSAGE_STATE_CHANGE) {
                 if (msg.arg1 == BluetoothService.STATE_CONNECTED) {
                     setStatus("Connected to " + mConnectedDeviceName);
-                }
-                else if (msg.arg1 == BluetoothService.STATE_CONNECTING) {
+                } else if (msg.arg1 == BluetoothService.STATE_CONNECTING) {
                     setStatus("Connecting");
-                }
-                else if (msg.arg1 == BluetoothService.STATE_NONE) {
+                } else if (msg.arg1 == BluetoothService.STATE_NONE) {
                     setStatus("Not connected");
                     // NOTE when KeepConnection thread already exists and trying to do reconnect
                     // it has WAITING state so stuff like isInterrupted() or isAlive() don't
                     // works correctly
                     Log.v(TAG, "Interruption status for KeepConnection = " + mKeepConnection.getState());
-                    if (mKeepConnection.getState() == Thread.State.TERMINATED && mDevice != null){
+                    if (mKeepConnection.getState() == Thread.State.TERMINATED && mDevice != null) {
                         mKeepConnection = new KeepConnection(mDevice);
                         mKeepConnection.start();
                         Log.i(TAG, "Created new mKeepConnection object to reconnecting");
                     }
                 }
-            }
-            else if (msg.what == Constants.MESSAGE_WRITE) {
+            } else if (msg.what == Constants.MESSAGE_WRITE) {
                 byte[] writeBuf = (byte[]) msg.obj;
                 // construct a string from the buffer
                 String writeMessage = new String(writeBuf);
                 Log.i(TAG, "Bluetooth worker thread: Sent message: " + writeMessage + " : to " + mConnectedDeviceName);
 //                mConversationArrayAdapter.add("Me:  " + writeMessage);
-            }
-            else if (msg.what == Constants.MESSAGE_READ) {
+            } else if (msg.what == Constants.MESSAGE_READ) {
                 byte[] readBuf = (byte[]) msg.obj;
                 // construct a string from the valid bytes in the buffer
                 String readMessage = new String(readBuf, 0, msg.arg1);
                 Log.i(TAG, "Bluetooth worker thread: " + mConnectedDeviceName + " send to this device:  " + readMessage);
-            }
-            else if (msg.what == Constants.MESSAGE_DEVICE_NAME) {
+            } else if (msg.what == Constants.MESSAGE_DEVICE_NAME) {
                 // save the connected device's name
                 mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
                 if (null != context) {
@@ -190,8 +192,7 @@ public class MainActivity extends AppCompatActivity {
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "Bluetooth worker thread: Device " + mConnectedDeviceName + " was connected");
                 }
-            }
-            else if (msg.what == Constants.MESSAGE_TOAST) {
+            } else if (msg.what == Constants.MESSAGE_TOAST) {
                 if (context != null) {
                     Toast.makeText(context, msg.getData().getString(Constants.TOAST),
                             Toast.LENGTH_SHORT).show();
@@ -203,6 +204,37 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    /**
+     * Periodically tries to reconnect to needed remote device
+     */
+    private class KeepConnection extends Thread {
+        private final BluetoothDevice device;
+
+        public KeepConnection(BluetoothDevice device) {
+            this.device = device;
+        }
+
+        @SuppressLint("MissingPermission")
+        public void run() {
+            while (mBluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
+                mBluetoothService.connect(device, true);
+                mConnectedDeviceName = device.getName();
+
+                if (mBluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
+                    showToast("Trying to reconnect in few seconds...");
+                    try {
+                        Thread.sleep(7000);
+                    } catch (InterruptedException e) {
+                        // This shouldn't appear but shit happens everywhere...
+                        Log.wtf(TAG, "Error occurred: ", e);
+                    }
+                } else {
+                    Log.i(TAG, "Device with provided address didn't connect");
+                }
+            }
+            Log.v(TAG, "KeepConnection: Im interrupted here!");
+        }
+    }
 
 
     // ============================== ACTIVITY LIFECYCLE OVERRIDES ==============================
@@ -211,6 +243,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
         context = getApplicationContext();
 
@@ -232,40 +265,19 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_SHORT).show();
             finish();
         }
-    }
 
-
-    /**
-     * Periodically tries to reconnect to needed remote device
-     */
-    private class KeepConnection extends Thread{
-        private final BluetoothDevice device;
-
-        public KeepConnection(BluetoothDevice device){
-            this.device = device;
-        }
-
-        @SuppressLint("MissingPermission")
-        public void run(){
-                while(mBluetoothService.getState() != BluetoothService.STATE_CONNECTED){
-                    mBluetoothService.connect(device, true);
-                    mConnectedDeviceName = device.getName();
-
-                    if (mBluetoothService.getState() != BluetoothService.STATE_CONNECTED){
-                        showToast("Trying to reconnect in few seconds...");
-                        try {
-                            Thread.sleep(7000);
-                        } catch (InterruptedException e) {
-                            // This shouldn't appear but shit happens everywhere...
-                            Log.wtf(TAG, "Error occurred: ", e);
-                        }
-                    }
-                    else {
-                        Log.i(TAG, "Device with provided address didn't connect");
-                    }
+        // Set listener to get data coming from the map fragment
+        this.getSupportFragmentManager().setFragmentResultListener("requestKey",
+            this,
+            new FragmentResultListener() {
+                @Override
+                public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle bundle) {
+                    // We use a String here, but any type that can be put in a Bundle is supported
+                    String result = bundle.getString("bundleKey");
+                    // Do something with the result
+                    Log.i(TAG, "Stuff from child activity comes up: " + result);
                 }
-                Log.v(TAG, "KeepConnection: Im interrupted here!");
-        }
+            });
     }
 
 
@@ -292,7 +304,8 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d(BluetoothService.TAG, "Trying to get this permission...");
                 requestPermissions(new String[]{bluetoothPermission}, REQUEST_ENABLE_BT);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         // TODO maybe its a duplication of while logic above
@@ -348,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
         if (mBluetoothService != null) {
             mBluetoothService.stop();
         }
-        if (mKeepConnection != null && mKeepConnection.isAlive()){
+        if (mKeepConnection != null && mKeepConnection.isAlive()) {
             mKeepConnection.interrupt();
         }
     }
