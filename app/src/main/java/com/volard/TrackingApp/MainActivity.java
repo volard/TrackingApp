@@ -7,6 +7,7 @@ import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -14,12 +15,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -47,8 +50,9 @@ public class MainActivity extends AppCompatActivity {
     // current context
     private Context context;
 
+
     // Map as the fragment
-    private final Fragment mapFragment = null;
+    private MapFragment mapFragment;
 
     // Intent request codes
     private static final int REQUEST_ENABLE_BT = 3;
@@ -71,8 +75,6 @@ public class MainActivity extends AppCompatActivity {
     // Member object for the bluetooth services
     private BluetoothService mBluetoothService = null;
 
-    // Map object
-    private GoogleMap mMap;
 
     // Result activity API implementation to request Bluetooth
     ActivityResultLauncher<Intent> requestBluetoothEnable = registerForActivityResult(
@@ -132,6 +134,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void proceedRetrieved(String retrievedMessage){
+
+        // Check the update position message
+        // The expected structure: {id} {latitude} {longitude}
+        String[] chunks = retrievedMessage.trim().split(" ");
+        if (chunks.length != 3){
+            Log.d(TAG, "Retrieved message has wrong structure (chunks != 3)");
+        }
+        double latitude, longitude;
+        try
+        {
+            latitude = Double.parseDouble(chunks[1]);
+            longitude = Double.parseDouble(chunks[2]);
+        }
+        catch(NumberFormatException e)
+        {
+            Log.d(TAG, "Two last chunks of retrieved message is not valid coordinates");
+            return;
+        }
+        // I assume id is a integer number because its probably will be a primary key in db
+        int id;
+        try {
+           id = Integer.parseInt(chunks[0]);
+        }
+        catch (NumberFormatException e){
+            Log.d(TAG, "The id is not valid integer");
+            return;
+        }
+
+        if (mapFragment != null){
+            mapFragment.updateMarkerPosition(id, latitude, longitude);
+        }
+    }
+
+
     /**
      * Updates the subtitle on the action bar.
      *
@@ -159,9 +196,11 @@ public class MainActivity extends AppCompatActivity {
             if (msg.what == Constants.MESSAGE_STATE_CHANGE) {
                 if (msg.arg1 == BluetoothService.STATE_CONNECTED) {
                     setStatus("Connected to " + mConnectedDeviceName);
-                } else if (msg.arg1 == BluetoothService.STATE_CONNECTING) {
+                }
+                else if (msg.arg1 == BluetoothService.STATE_CONNECTING) {
                     setStatus("Connecting");
-                } else if (msg.arg1 == BluetoothService.STATE_NONE) {
+                }
+                else if (msg.arg1 == BluetoothService.STATE_NONE) {
                     setStatus("Not connected");
                     // NOTE when KeepConnection thread already exists and trying to do reconnect
                     // it has WAITING state so stuff like isInterrupted() or isAlive() don't
@@ -173,18 +212,22 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, "Created new mKeepConnection object to reconnecting");
                     }
                 }
-            } else if (msg.what == Constants.MESSAGE_WRITE) {
+            }
+            else if (msg.what == Constants.MESSAGE_WRITE) {
                 byte[] writeBuf = (byte[]) msg.obj;
                 // construct a string from the buffer
                 String writeMessage = new String(writeBuf);
                 Log.i(TAG, "Bluetooth worker thread: Sent message: " + writeMessage + " : to " + mConnectedDeviceName);
 //                mConversationArrayAdapter.add("Me:  " + writeMessage);
-            } else if (msg.what == Constants.MESSAGE_READ) {
+            }
+            else if (msg.what == Constants.MESSAGE_READ) {
                 byte[] readBuf = (byte[]) msg.obj;
                 // construct a string from the valid bytes in the buffer
                 String readMessage = new String(readBuf, 0, msg.arg1);
                 Log.i(TAG, "Bluetooth worker thread: " + mConnectedDeviceName + " send to this device:  " + readMessage);
-            } else if (msg.what == Constants.MESSAGE_DEVICE_NAME) {
+                proceedRetrieved(readMessage);
+            }
+            else if (msg.what == Constants.MESSAGE_DEVICE_NAME) {
                 // save the connected device's name
                 mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
                 if (null != context) {
@@ -192,7 +235,8 @@ public class MainActivity extends AppCompatActivity {
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "Bluetooth worker thread: Device " + mConnectedDeviceName + " was connected");
                 }
-            } else if (msg.what == Constants.MESSAGE_TOAST) {
+            }
+            else if (msg.what == Constants.MESSAGE_TOAST) {
                 if (context != null) {
                     Toast.makeText(context, msg.getData().getString(Constants.TOAST),
                             Toast.LENGTH_SHORT).show();
@@ -244,6 +288,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mapFragment = (MapFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragmentContainerView);
 
         context = getApplicationContext();
 
@@ -276,9 +322,37 @@ public class MainActivity extends AppCompatActivity {
                     String result = bundle.getString("bundleKey");
                     // Do something with the result
                     Log.i(TAG, "Stuff from child activity comes up: " + result);
+
+
+                    // Create the object of AlertDialog Builder class
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+
+                    builder.setMessage("Вы действительно хотите отправить сигнал?");
+                    builder.setTitle("Внимание !");
+
+                    // Set Cancelable false for when the user clicks on the outside the Dialog Box then it will remain show
+                    builder.setCancelable(true);
+
+                    // Set the positive button with yes name Lambda OnClickListener method is use of DialogInterface interface.
+                    builder.setPositiveButton("Да", (DialogInterface.OnClickListener) (dialog, which) -> {
+                        // When the user click yes button then app will close
+                        sendMessage("Bzzzz to " + result);
+                    });
+
+                    // Set the Negative button with No name Lambda OnClickListener method is use of DialogInterface interface.
+                    builder.setNegativeButton("Нет", (DialogInterface.OnClickListener) (dialog, which) -> {
+                        // If user click no then dialog box is canceled.
+                        dialog.cancel();
+                    });
+
+                    // Create the Alert dialog
+                    AlertDialog alertDialog = builder.create();
+                    // Show the Alert Dialog box
+                    alertDialog.show();
                 }
             });
     }
+
 
 
     @Override
