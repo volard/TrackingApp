@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TrackingApp</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_map_theme_toggle">Переключить вид карты</string>
+    <string name="action_change_tx_device">Сменить передатчик</string>
+    <string name="action_toggle_markers_names">Переключить заголовки меток</string>
+    <string name="question_make_sure_to_send_signal">Вы действительно хотите отправить сигнал?</string>
+    <string name="attention_label">Внимание!</string>
+    <string name="state_connecting">Подключение...</string>
+    <string name="state_connected">Подключено</string>
+    <string name="state_connection_failed">Ошибка подключения</string>
+    <string name="answer_ok">Ок</string>
+    <string name="answer_cancel">Отмена</string>
+    <string name="state_not_connected">Не подключено</string>
+</resources>

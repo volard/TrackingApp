@@ -6,24 +6,24 @@
     <item
         android:id="@+id/action_map_theme_toggle"
         android:icon="@drawable/ic_baseline_nightlight_48dp"
-        android:title="Toggle map theme"
+        android:title="@string/action_map_theme_toggle"
         app:showAsAction="ifRoom" />
 
     <!-- Settings, should always be in the overflow -->
     <item android:id="@+id/action_settings"
         android:icon="@drawable/ic_baseline_settings_48"
-        android:title="Settings"
+        android:title="@string/action_settings"
         app:showAsAction="never" />
 
 
     <!-- Show mark titles -->
     <item android:id="@+id/action_toggle_markers_names"
         android:icon="@drawable/ic_baseline_title_48"
-        android:title="Toggle markers' titles"
+        android:title="@string/action_toggle_markers_names"
         app:showAsAction="ifRoom" />
 
     <!-- Change default transmitter device -->
     <item android:id="@+id/action_change_tx_device"
-        android:title="Change dafault device"
+        android:title="@string/action_change_tx_device"
         app:showAsAction="never" />
 </menu>

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,6 +29,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentResultListener;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -186,13 +189,13 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             if (msg.what == Constants.MESSAGE_STATE_CHANGE) {
                 if (msg.arg1 == BluetoothService.STATE_CONNECTED) {
-                    setStatus("Connected to " + mConnectedDeviceName);
+                    setStatus("@string/state_connected" + " " + mConnectedDeviceName);
                 }
                 else if (msg.arg1 == BluetoothService.STATE_CONNECTING) {
-                    setStatus("Connecting");
+                    setStatus("@string/state_connecting");
                 }
                 else if (msg.arg1 == BluetoothService.STATE_NONE) {
-                    setStatus("Not connected");
+                    setStatus("@string/state_not_connected");
                     // NOTE when KeepConnection thread already exists and trying to do reconnect
                     // it has WAITING state so stuff like isInterrupted() or isAlive() don't
                     // works correctly
@@ -318,20 +321,20 @@ public class MainActivity extends AppCompatActivity {
                     // Create the object of AlertDialog Builder class
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
-                    builder.setMessage("Вы действительно хотите отправить сигнал?");
-                    builder.setTitle("Внимание !");
+                    builder.setMessage("@string/question_make_sure_to_send_signal");
+                    builder.setTitle("@string/attention_label");
 
                     // Set Cancelable false for when the user clicks on the outside the Dialog Box then it will remain show
                     builder.setCancelable(true);
 
                     // Set the positive button with yes name Lambda OnClickListener method is use of DialogInterface interface.
-                    builder.setPositiveButton("Да", (DialogInterface.OnClickListener) (dialog, which) -> {
+                    builder.setPositiveButton("@string/answer_ok", (DialogInterface.OnClickListener) (dialog, which) -> {
                         // When the user click yes button then app will close
                         sendMessage("Bzzzz to " + result);
                     });
 
                     // Set the Negative button with No name Lambda OnClickListener method is use of DialogInterface interface.
-                    builder.setNegativeButton("Нет", (DialogInterface.OnClickListener) (dialog, which) -> {
+                    builder.setNegativeButton("@string/answer_cancel", (DialogInterface.OnClickListener) (dialog, which) -> {
                         // If user click no then dialog box is canceled.
                         dialog.cancel();
                     });
@@ -345,6 +348,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * Updates the language of application by creating
+     * object of inbuilt Locale class and passing language argument to it
+     */
+    private static Context updateResources(Context context, String language) {
+        Locale locale = new Locale(language);
+        Locale.setDefault(locale);
+
+        Configuration configuration = context.getResources().getConfiguration();
+        configuration.setLocale(locale);
+        configuration.setLayoutDirection(locale);
+
+        return context.createConfigurationContext(configuration);
+    }
 
     @Override
     protected void onStart() {
@@ -404,6 +421,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     @Override
     public void onResume() {
         super.onResume();
@@ -438,6 +456,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_settings) {
@@ -450,5 +469,5 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return false;
-    }
+}
 }
