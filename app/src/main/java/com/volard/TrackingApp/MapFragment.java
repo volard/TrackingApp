@@ -16,8 +16,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -49,6 +47,7 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
 
     // Member fields
     private ArrayList<Marker> markers = new ArrayList<>();
+    public boolean lightTheme = true;
     private GoogleMap mGoogleMap = null;
     private boolean showTitles = true;
     private final Handler mHandler = new Handler();
@@ -60,12 +59,12 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
      * @return random HUE float value
      */
     private float getRandomHue(){
-                            final float MIN = 0;
-                            final float MAX = 360;
+        final float MIN = 0;
+        final float MAX = 360;
 
-                            Random random = new SecureRandom();
-                            return MIN + random.nextFloat() * (MAX - MIN);
-                            }
+        Random random = new SecureRandom();
+        return MIN + random.nextFloat() * (MAX - MIN);
+    }
 
 
     /**
@@ -96,11 +95,21 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(52.251080, 104.356545)));
 
         googleMap.setOnMarkerClickListener(this);
+        toggleTheme();
+    }
 
-        // Set map style
+    public void toggleTheme(){
         try {
-            String themeFileName = "mapstyle_night.json";
-//            String themeFileName = "simple_map_theme.json";
+            String themeFileName;
+            if (lightTheme){
+                themeFileName = "mapstyle_night.json";
+            }
+            else{
+                themeFileName = "simple_map_theme.json";
+            }
+
+            lightTheme = !lightTheme;
+
             InputStream jsonContent = mContext.getAssets().open(themeFileName);
             String jsonStyle;
 
@@ -110,7 +119,7 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
             if (jsonStyle == null) throw new NullPointerException();
 
             MapStyleOptions style = new MapStyleOptions(jsonStyle);
-            googleMap.setMapStyle(style);
+            this.mGoogleMap.setMapStyle(style);
 
         } catch (IOException e) {
             Log.e(TAG, "Style json asset file is unavailable or doesn't exist");
@@ -164,13 +173,13 @@ public class MapFragment extends Fragment  implements GoogleMap.OnMarkerClickLis
                     markers) {
                 marker.hideInfoWindow();
             }
-            showTitles = false;
-            return;
         }
-        for (Marker marker: markers) {
-            marker.showInfoWindow();
+        else{
+            for (Marker marker: markers) {
+                marker.showInfoWindow();
+            }
         }
-        showTitles = true;
+        showTitles = !showTitles;
     }
 
 

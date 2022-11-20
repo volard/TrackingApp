@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Toggle map theme (light \ dark) -->
+    <item
+        android:id="@+id/action_map_theme_toggle"
+        android:icon="@drawable/ic_baseline_nightlight_48dp"
+        android:title="Toggle map theme"
+        app:showAsAction="ifRoom" />
+
+    <!-- Settings, should always be in the overflow -->
+    <item android:id="@+id/action_settings"
+        android:icon="@drawable/ic_baseline_settings_48"
+        android:title="Settings"
+        app:showAsAction="never" />
+
+
+    <!-- Show mark titles -->
+    <item android:id="@+id/action_toggle_markers_names"
+        android:icon="@drawable/ic_baseline_title_48"
+        android:title="Toggle markers' titles"
+        app:showAsAction="ifRoom" />
+
+    <!-- Change default transmitter device -->
+    <item android:id="@+id/action_change_tx_device"
+        android:title="Change dafault device"
+        app:showAsAction="never" />
+</menu>
