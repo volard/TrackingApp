@@ -26,4 +26,14 @@
     <item android:id="@+id/action_change_tx_device"
         android:title="@string/action_change_tx_device"
         app:showAsAction="never" />
+
+    <!-- Toggle inactive labels -->
+    <item android:id="@+id/action_toggle_inactive_labels"
+        android:title="@string/action_toggle_inactive_labels"
+        app:showAsAction="never" />
+
+    <!-- Toggle inactive labels -->
+    <item android:id="@+id/action_clear_db"
+        android:title="@string/action_clear_db"
+        app:showAsAction="never" />
 </menu>

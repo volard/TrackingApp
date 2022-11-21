@@ -13,4 +13,6 @@
     <string name="answer_ok">Ок</string>
     <string name="answer_cancel">Отмена</string>
     <string name="state_not_connected">Не подключено</string>
+    <string name="action_toggle_inactive_labels">Переключить неактивные метки</string>
+    <string name="action_clear_db">Очистить локальные данные</string>
 </resources>

@@ -27,6 +27,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentResultListener;
+import androidx.room.Room;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -53,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
     // Name of the connected device
     private String mConnectedDeviceName = null;
+
+    public AppDatabase db;
+    public EmployeeDao employeeDao;
 
     // Connected device
     private BluetoothDevice mDevice;
@@ -345,6 +349,11 @@ public class MainActivity extends AppCompatActivity {
                     alertDialog.show();
                 }
             });
+
+        db = Room.databaseBuilder(getApplicationContext(),
+                AppDatabase.class, "EmployeeDatabase").build();
+
+        employeeDao = db.employeeDao();
     }
 
 
@@ -467,6 +476,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.action_toggle_markers_names) {
             mapFragment.toggleTitles();
             return true;
+        }
+        else if (item.getItemId() == R.id.action_clear_db){
+//            employeeDao.delete();
         }
         return false;
 }

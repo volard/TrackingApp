@@ -12,4 +12,6 @@
     <string name="answer_ok">Ok</string>
     <string name="answer_cancel">Cancel</string>
     <string name="state_not_connected">Not connected</string>
+    <string name="action_toggle_inactive_labels">Toggle inactive markers</string>
+    <string name="action_clear_db">Clear local database</string>
 </resources>
