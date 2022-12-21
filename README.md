@@ -3,7 +3,7 @@ An Android application shows employees' positions on the map. Coordinates are re
 
 
 # ⚡ Requirements
-- Android version >= 6.0
+- Android version 6 to 11
 - Bluetooth support
 - ESP32 microcontroller with the firmware (in progress...)
 - Internet connection
